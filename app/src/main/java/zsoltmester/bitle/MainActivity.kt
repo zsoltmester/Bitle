@@ -7,7 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
@@ -15,7 +15,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.GridCells
 import androidx.compose.foundation.lazy.LazyVerticalGrid
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
@@ -29,7 +29,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import zsoltmester.bitle.engine.*
 import zsoltmester.bitle.ui.theme.BitleTheme
@@ -123,55 +122,87 @@ fun TopAppBar() {
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun Grid(cells: List<CellModel>) {
+    // TODO: 8 should come from the engine
     LazyVerticalGrid(
         cells = GridCells.Fixed(8)
     ) {
-        items(cells) { cell ->
-            GridCell(cell = cell)
+        itemsIndexed(cells) { index, cell ->
+            GridCell(cell = cell, indexInRow = index % 8)
         }
     }
 }
 
-@OptIn(ExperimentalAnimationApi::class)
+@OptIn(ExperimentalAnimationApi::class, ExperimentalMaterialApi::class)
 @Composable
-fun GridCell(cell: CellModel) {
-    val cardBackgroundColor: Color by animateColorAsState(
-        targetValue = cellBackgroundColor(cell.type),
-        animationSpec = tween(300, easing = FastOutSlowInEasing)
-    )
-
-    val cardBorderSize: Dp by animateDpAsState(
-        targetValue = if (cell.type == CellType.EMPTY || cell.type == CellType.INPUT) 1.dp else 0.dp,
-        animationSpec = tween(300, easing = FastOutSlowInEasing)
-    )
-
-    val cardBorderColor: Color by animateColorAsState(
-        targetValue = if (cell.type == CellType.EMPTY) Color.LightGray else if (cell.type == CellType.INPUT) Color.Gray else Color.Transparent,
-        animationSpec = tween(300, easing = FastOutSlowInEasing)
-    )
-
-    val textScale: Float by animateFloatAsState(
-        targetValue = if (cell.type == CellType.EMPTY) 0.4f else 1f,
-        animationSpec = tween(300, easing = FastOutSlowInEasing)
-    )
-
-    Card(
+fun GridCell(cell: CellModel, indexInRow: Int) {
+    FlipCard(
+        cardFace = if (cell.type == CellType.EMPTY || cell.type == CellType.INPUT) CardFace.Front else CardFace.Back,
+        animationSpec = tween(
+            durationMillis = 300,
+            easing = LinearOutSlowInEasing,
+            delayMillis = indexInRow * 300
+        ),
         modifier = Modifier
             .padding(4.dp)
             .height(48.dp)
             .fillMaxWidth(),
-        backgroundColor = cardBackgroundColor,
-        border = BorderStroke(cardBorderSize, cardBorderColor),
-    ) {
-        Text(
-            text = cellDisplayValue(cell.value),
-            style = MaterialTheme.typography.body1,
-            textAlign = TextAlign.Center,
-            modifier = Modifier
-                .wrapContentHeight(CenterVertically)
-                .scale(textScale)
-        )
-    }
+        front = {
+            val cardBorderColor: Color by animateColorAsState(
+                targetValue = when (cell.type) {
+                    CellType.EMPTY -> Color.LightGray
+                    else -> Color.Gray
+                },
+                animationSpec = tween(300, easing = FastOutSlowInEasing)
+            )
+
+            val textScale: Float by animateFloatAsState(
+                targetValue = if (cell.type == CellType.EMPTY) 0.4f else 1f,
+                animationSpec = tween(300, easing = FastOutSlowInEasing)
+            )
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    border = BorderStroke(1.dp, cardBorderColor)
+                ) {
+                    Text(
+                        text = cellDisplayValue(cell.value),
+                        style = MaterialTheme.typography.body1,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .wrapContentHeight(CenterVertically)
+                            .scale(textScale)
+                    )
+                }
+            }
+        },
+        back = {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    backgroundColor = cellBackgroundColor(cell.type)
+                ) {
+                    Text(
+                        text = cellDisplayValue(cell.value),
+                        style = MaterialTheme.typography.body1,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .wrapContentHeight(CenterVertically)
+                    )
+                }
+            }
+        },
+    )
 }
 
 @Composable
@@ -211,6 +242,11 @@ fun Keyboard(cells: List<CellModel>, onClick: (CellValue) -> Unit) {
 
 @Composable
 fun KeyboardCell(cell: CellModel, onClick: (CellValue) -> Unit) {
+    val backgroundColor: Color by animateColorAsState(
+        targetValue = cellBackgroundColor(cell.type),
+        animationSpec = tween(300, easing = FastOutSlowInEasing)
+    )
+
     Card(
         modifier = Modifier
             .padding(4.dp)
@@ -220,7 +256,7 @@ fun KeyboardCell(cell: CellModel, onClick: (CellValue) -> Unit) {
         Button(
             contentPadding = PaddingValues(0.dp),
             colors = ButtonDefaults.buttonColors(
-                backgroundColor = cellBackgroundColor(cell.type)
+                backgroundColor = backgroundColor
             ),
             onClick = { onClick(cell.value) }
         ) {
