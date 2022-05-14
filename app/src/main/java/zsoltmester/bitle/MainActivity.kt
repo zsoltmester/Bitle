@@ -31,8 +31,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import zsoltmester.bitle.engine.*
-import zsoltmester.bitle.ui.theme.BitleTheme
-import zsoltmester.bitle.ui.theme.Teal200
+import zsoltmester.bitle.ui.theme.*
 
 class MainActivity : ComponentActivity() {
 
@@ -54,7 +53,6 @@ fun MainScreen(engine: GameEngine) {
     val context = LocalContext.current
 
     Scaffold(
-        backgroundColor = MaterialTheme.colors.background,
         topBar = {
             TopAppBar()
         }
@@ -95,12 +93,11 @@ fun MainScreen(engine: GameEngine) {
 @Composable
 fun TopAppBar() {
     TopAppBar(
-        backgroundColor = MaterialTheme.colors.primary,
         content = {
             Row(
                 modifier = Modifier.fillMaxSize(),
                 horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = CenterVertically
             ) {
                 IconButton(onClick = {}) {
                     Icon(Icons.Filled.Info, null)
@@ -149,8 +146,8 @@ fun GridCell(cell: CellModel, indexInRow: Int) {
         front = {
             val cardBorderColor: Color by animateColorAsState(
                 targetValue = when (cell.type) {
-                    CellType.EMPTY -> Color.LightGray
-                    else -> Color.Gray
+                    CellType.EMPTY -> EmptyCellBorderColor
+                    else -> InputCellBorderColor
                 },
                 animationSpec = tween(300, easing = FastOutSlowInEasing)
             )
@@ -172,7 +169,7 @@ fun GridCell(cell: CellModel, indexInRow: Int) {
                 ) {
                     Text(
                         text = cellDisplayValue(cell.value),
-                        style = MaterialTheme.typography.body1,
+                        style = CellTextStyle,
                         textAlign = TextAlign.Center,
                         modifier = Modifier
                             .wrapContentHeight(CenterVertically)
@@ -194,7 +191,8 @@ fun GridCell(cell: CellModel, indexInRow: Int) {
                 ) {
                     Text(
                         text = cellDisplayValue(cell.value),
-                        style = MaterialTheme.typography.body1,
+                        color = Color.White,
+                        style = CellTextStyle,
                         textAlign = TextAlign.Center,
                         modifier = Modifier
                             .wrapContentHeight(CenterVertically)
@@ -262,7 +260,8 @@ fun KeyboardCell(cell: CellModel, onClick: (CellValue) -> Unit) {
         ) {
             Text(
                 text = cellDisplayValue(cell.value),
-                style = MaterialTheme.typography.body1,
+                color = if (cell.type == CellType.UNKNOWN || cell.type == CellType.UTILITY_DISABLED || cell.type == CellType.UTILITY_ENABLED) Color.Black else Color.White,
+                style = if (cell.type == CellType.UTILITY_DISABLED || cell.type == CellType.UTILITY_ENABLED) UtilityCellTextStyle else CellTextStyle,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.wrapContentHeight(CenterVertically)
             )
@@ -295,11 +294,11 @@ private fun cellDisplayValue(cellValue: CellValue): String {
         CellValue.ZERO ->
             "0"
         CellValue.AND ->
-            "AND"
+            "&"
         CellValue.OR ->
-            "OR"
+            "|"
         CellValue.XOR ->
-            "XOR"
+            "^"
         CellValue.EQUAL ->
             "="
         CellValue.DELETE ->
@@ -312,21 +311,19 @@ private fun cellDisplayValue(cellValue: CellValue): String {
 private fun cellBackgroundColor(cellType: CellType): Color {
     return when (cellType) {
         CellType.EMPTY ->
-            Color.White
+            EmptyCellColor
         CellType.INPUT ->
-            Color.White
+            InputCellColor
         CellType.FOUND ->
-            Color.Green
+            FoundCellColor
         CellType.CONTAINS ->
-            Color.Yellow
+            ContainsCellColor
         CellType.NOT_INCLUDED ->
-            Color.Gray
+            NotIncludedCellColor
         CellType.UNKNOWN ->
-            Color.LightGray
-        CellType.UTILITY_DISABLED ->
-            Teal200
-        CellType.UTILITY_ENABLED ->
-            Teal200
+            UnknownCellColor
+        CellType.UTILITY_DISABLED, CellType.UTILITY_ENABLED ->
+            UtilityCellColor
     }
 }
 
