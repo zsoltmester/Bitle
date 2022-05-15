@@ -245,6 +245,11 @@ fun KeyboardCell(cell: CellModel, onClick: (CellValue) -> Unit) {
         animationSpec = tween(300, easing = FastOutSlowInEasing)
     )
 
+    val textColor: Color by animateColorAsState(
+        targetValue = if (cell.type == CellType.UNKNOWN || cell.type == CellType.UTILITY_DISABLED || cell.type == CellType.UTILITY_ENABLED) Color.Black else Color.White,
+        animationSpec = tween(300, easing = FastOutSlowInEasing)
+    )
+
     Card(
         modifier = Modifier
             .padding(4.dp)
@@ -260,7 +265,7 @@ fun KeyboardCell(cell: CellModel, onClick: (CellValue) -> Unit) {
         ) {
             Text(
                 text = cellDisplayValue(cell.value),
-                color = if (cell.type == CellType.UNKNOWN || cell.type == CellType.UTILITY_DISABLED || cell.type == CellType.UTILITY_ENABLED) Color.Black else Color.White,
+                color = textColor,
                 style = if (cell.type == CellType.UTILITY_DISABLED || cell.type == CellType.UTILITY_ENABLED) UtilityCellTextStyle else CellTextStyle,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.wrapContentHeight(CenterVertically)
