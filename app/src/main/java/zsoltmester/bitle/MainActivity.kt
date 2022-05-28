@@ -62,7 +62,11 @@ fun MainScreen(engine: GameEngine) {
                     .weight(1f)
                     .fillMaxWidth(),
                 message = gameState.message,
-                previousMessage = previousGameState.message
+                previousMessage = previousGameState.message,
+                gameStatus = gameState.status, onClick = {
+                    previousGameState = gameState
+                    gameState = engine.startNewGame()
+                }
             )
             Keyboard(gameState.keyboardCells, onClick = {
                 previousGameState = gameState
@@ -194,7 +198,13 @@ fun GridCell(cell: CellModel, previousCell: CellModel, indexInRow: Int) {
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-fun MessageBox(modifier: Modifier, message: Message?, previousMessage: Message?) {
+fun MessageBox(
+    modifier: Modifier,
+    message: Message?,
+    previousMessage: Message?,
+    gameStatus: GameStatus,
+    onClick: () -> Unit
+) {
     Box(
         modifier = modifier,
         contentAlignment = Center
@@ -225,10 +235,21 @@ fun MessageBox(modifier: Modifier, message: Message?, previousMessage: Message?)
                 animationSpec = tween(300, easing = FastOutSlowInEasing)
             )
         ) {
-            Text(
-                evaluatedMessage ?: evaluatedPreviousMessage ?: "",
-                style = MaterialTheme.typography.body1
-            )
+            Row(verticalAlignment = CenterVertically) {
+                Text(
+                    evaluatedMessage ?: evaluatedPreviousMessage ?: "",
+                    style = MaterialTheme.typography.body1
+                )
+                if (gameStatus == GameStatus.IN_PROGRESS) {
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Button(onClick = { onClick() }) {
+                        Text(
+                            text = if (gameStatus == GameStatus.WON) "Start new game" else "Try again",
+                            style = UtilityCellTextStyle,
+                        )
+                    }
+                }
+            }
         }
     }
 }
