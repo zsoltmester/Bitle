@@ -1,11 +1,9 @@
 package zsoltmester.bitle
 
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.*
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
@@ -22,6 +20,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Alignment.Companion.Center
 import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
@@ -50,8 +49,6 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MainScreen(engine: GameEngine) {
-    val context = LocalContext.current
-
     Scaffold(
         topBar = {
             TopAppBar()
@@ -62,29 +59,14 @@ fun MainScreen(engine: GameEngine) {
         Column(modifier = Modifier.fillMaxSize()) {
             Spacer(modifier = Modifier.weight(0.5f))
             Grid(gameState.gridCells)
-            Spacer(modifier = Modifier.weight(0.5f))
+            MessageBox(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                message = gameState.message
+            )
             Keyboard(gameState.keyboardCells, onClick = {
-                val response = engine.processAction(it)
-                gameState = response.first
-
-                when (response.second) {
-                    ActionError.INPUT_ROW_FULL -> {
-                        Toast.makeText(context, "Input row is full.", Toast.LENGTH_SHORT).show()
-                    }
-                    ActionError.INPUT_ROW_EMPTY -> {
-                        Toast.makeText(context, "Input row is empty.", Toast.LENGTH_SHORT).show()
-                    }
-                    ActionError.INPUT_ROW_INCOMPLETE -> {
-                        Toast.makeText(context, "Input row is incomplete.", Toast.LENGTH_SHORT)
-                            .show()
-                    }
-                    ActionError.INVALID_EQUATION -> {
-                        Toast.makeText(context, "Invalid equation.", Toast.LENGTH_SHORT).show()
-                    }
-                    null -> {
-                        // Nothing to do.
-                    }
-                }
+                gameState = engine.processAction(it)
             })
         }
     }
@@ -129,7 +111,7 @@ fun Grid(cells: List<CellModel>) {
     }
 }
 
-@OptIn(ExperimentalAnimationApi::class, ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun GridCell(cell: CellModel, indexInRow: Int) {
     FlipCard(
@@ -201,6 +183,43 @@ fun GridCell(cell: CellModel, indexInRow: Int) {
             }
         },
     )
+}
+
+
+@OptIn(ExperimentalAnimationApi::class)
+@Composable
+fun MessageBox(modifier: Modifier, message: Message?) {
+    Box(
+        modifier = modifier,
+        contentAlignment = Center
+    ) {
+        val messageString = when (message) {
+            Message.INPUT_ROW_FULL -> null
+            Message.INPUT_ROW_EMPTY -> null
+            Message.INPUT_ROW_INCOMPLETE -> "Equation incomplete"
+            Message.INVALID_EQUATION -> "Equation invalid"
+            Message.WON -> "You won! \uD83C\uDFC6 \uD83C\uDF89"
+            Message.LOST -> "Game over \uD83D\uDE14"
+            null -> null
+        }
+
+        AnimatedVisibility(
+            visible = messageString != null,
+            enter = scaleIn(
+                initialScale = 0.4f,
+                animationSpec = tween(300, easing = FastOutSlowInEasing)
+            ),
+            exit = scaleOut(
+                targetScale = 0.4f,
+                animationSpec = tween(300, easing = FastOutSlowInEasing)
+            ) // TODO: doesn't work
+        ) {
+            Text(
+                messageString ?: "",
+                style = MaterialTheme.typography.body1
+            )
+        }
+    }
 }
 
 @Composable

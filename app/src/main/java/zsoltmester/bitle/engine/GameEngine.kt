@@ -35,20 +35,25 @@ enum class GameStatus {
     IN_PROGRESS, WON, LOST
 }
 
-data class GameState(val status: GameStatus, val gridCells: List<CellModel>, val keyboardCells: List<CellModel>)
-
-enum class ActionError {
+enum class Message {
+    WON,
+    LOST,
     INPUT_ROW_FULL,
     INPUT_ROW_EMPTY,
     INPUT_ROW_INCOMPLETE,
     INVALID_EQUATION
 }
 
-typealias ActionResponse = Pair<GameState, ActionError?>
+data class GameState(
+    val status: GameStatus,
+    val gridCells: List<CellModel>,
+    val keyboardCells: List<CellModel>,
+    val message: Message?
+)
 
 interface GameEngine {
     fun startNewGame(): GameState
-    fun processAction(cellValue: CellValue): ActionResponse
+    fun processAction(cellValue: CellValue): GameState
 }
 
 // TODO: Shouldn't use context.
@@ -69,12 +74,12 @@ class GameEngineImpl(private val context: Context) : GameEngine {
         return gameState as GameState
     }
 
-    override fun processAction(cellValue: CellValue): ActionResponse {
+    override fun processAction(cellValue: CellValue): GameState {
         if (gameState!!.status != GameStatus.IN_PROGRESS) {
-            return Pair(gameState!!, null)
+            return gameState!!
         }
 
-        val error: ActionError? = when (cellValue) {
+        val message: Message? = when (cellValue) {
             CellValue.ONE,
             CellValue.TWO,
             CellValue.THREE,
@@ -100,12 +105,14 @@ class GameEngineImpl(private val context: Context) : GameEngine {
             }
         }
 
-        return Pair(gameState!!, error)
+        gameState = gameState!!.copy(message = message)
+
+        return gameState!!
     }
 
-    private fun appendToInputRow(cellValue: CellValue): ActionError? {
+    private fun appendToInputRow(cellValue: CellValue): Message? {
         if (isInputRowFilled()) {
-            return ActionError.INPUT_ROW_FULL
+            return Message.INPUT_ROW_FULL
         }
 
         val firstEmptyCellIndex = firstEmptyCellIndex()
@@ -114,10 +121,10 @@ class GameEngineImpl(private val context: Context) : GameEngine {
         return null
     }
 
-    private fun deleteFromInputRow(): ActionError? {
+    private fun deleteFromInputRow(): Message? {
         val lastInputCellIndex = lastInputCellIndex()
         if (lastInputCellIndex < 0) {
-            return ActionError.INPUT_ROW_EMPTY
+            return Message.INPUT_ROW_EMPTY
         }
 
         replaceGridCell(lastInputCellIndex, CellModel(CellType.EMPTY, CellValue.EMPTY))
@@ -125,20 +132,18 @@ class GameEngineImpl(private val context: Context) : GameEngine {
         return null
     }
 
-    private fun processEnter(): ActionError? {
+    private fun processEnter(): Message? {
         if (!isInputRowFilled()) {
-            return ActionError.INPUT_ROW_INCOMPLETE
+            return Message.INPUT_ROW_INCOMPLETE
         }
 
         if (!isInputRowValidEquation()) {
-            return ActionError.INVALID_EQUATION
+            return Message.INVALID_EQUATION
         }
 
         validateInputRow()
 
-        updateGameStatus()
-
-        return null
+        return updateGameStatus()
     }
 
     private fun createEmptyGameState(): GameState {
@@ -165,7 +170,7 @@ class GameEngineImpl(private val context: Context) : GameEngine {
             CellModel(type = CellType.UTILITY_DISABLED, value = CellValue.ENTER)
         ).toMutableList()
 
-        return GameState(GameStatus.IN_PROGRESS, gridCells, keyboardCells)
+        return GameState(GameStatus.IN_PROGRESS, gridCells, keyboardCells, null)
     }
 
     private fun createEquation(): String {
@@ -180,7 +185,7 @@ class GameEngineImpl(private val context: Context) : GameEngine {
     private fun replaceGridCell(gridCellIndex: Int, newGridCell: CellModel) {
         val updatedGridCells: MutableList<CellModel> = gameState!!.gridCells.toMutableList()
         updatedGridCells[gridCellIndex] = newGridCell
-        gameState = GameState(GameStatus.IN_PROGRESS, updatedGridCells, gameState!!.keyboardCells)
+        gameState = gameState!!.copy(gridCells = updatedGridCells)
     }
 
     private fun inputRowFirstIndex(): Int {
@@ -214,7 +219,10 @@ class GameEngineImpl(private val context: Context) : GameEngine {
     private fun previousInputRowCells(): List<CellModel> {
         val previousInputRowFirstIndex = previousInputRowFirstIndex()
         val previousInputRowLastIndex = previousInputRowLastIndex()
-        return gameState!!.gridCells.subList(previousInputRowFirstIndex, previousInputRowLastIndex + 1)
+        return gameState!!.gridCells.subList(
+            previousInputRowFirstIndex,
+            previousInputRowLastIndex + 1
+        )
     }
 
     private fun isInputRowFilled(): Boolean {
@@ -302,12 +310,17 @@ class GameEngineImpl(private val context: Context) : GameEngine {
         newGridCells += inputRowCells
         newGridCells += gridCells.drop(inputRowLastIndex() + 1)
 
-        gameState = GameState(gameState!!.status, newGridCells, newKeyboardCells)
+        gameState = gameState!!.copy(gridCells = newGridCells, keyboardCells = newKeyboardCells)
     }
 
-    private fun updateGameStatus() {
+    private fun updateGameStatus(): Message? {
         val newGameStatus = calculateGameStatus()
-        gameState = GameState(newGameStatus, gameState!!.gridCells, gameState!!.keyboardCells)
+        gameState = gameState!!.copy(status = newGameStatus)
+        return when (newGameStatus) {
+            GameStatus.WON -> Message.WON
+            GameStatus.LOST -> Message.WON
+            else -> null
+        }
     }
 
     private fun calculateGameStatus(): GameStatus {
