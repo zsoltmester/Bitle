@@ -48,7 +48,8 @@ data class GameState(
     val status: GameStatus,
     val gridCells: List<CellModel>,
     val keyboardCells: List<CellModel>,
-    val message: Message?
+    val message: Message?,
+    val previousMessage: Message?
 )
 
 interface GameEngine {
@@ -79,6 +80,8 @@ class GameEngineImpl(private val context: Context) : GameEngine {
             return gameState!!
         }
 
+        val previousMessage = gameState!!.message
+
         val message: Message? = when (cellValue) {
             CellValue.ONE,
             CellValue.TWO,
@@ -105,7 +108,7 @@ class GameEngineImpl(private val context: Context) : GameEngine {
             }
         }
 
-        gameState = gameState!!.copy(message = message)
+        gameState = gameState!!.copy(message = message, previousMessage = previousMessage)
 
         return gameState!!
     }
@@ -170,7 +173,13 @@ class GameEngineImpl(private val context: Context) : GameEngine {
             CellModel(type = CellType.UTILITY_DISABLED, value = CellValue.ENTER)
         ).toMutableList()
 
-        return GameState(GameStatus.IN_PROGRESS, gridCells, keyboardCells, null)
+        return GameState(
+            GameStatus.IN_PROGRESS,
+            gridCells,
+            keyboardCells,
+            null,
+            previousMessage = null
+        )
     }
 
     private fun createEquation(): String {

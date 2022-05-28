@@ -1,6 +1,7 @@
 package zsoltmester.bitle
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.*
@@ -63,7 +64,8 @@ fun MainScreen(engine: GameEngine) {
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth(),
-                message = gameState.message
+                message = gameState.message,
+                previousMessage = gameState.previousMessage
             )
             Keyboard(gameState.keyboardCells, onClick = {
                 gameState = engine.processAction(it)
@@ -188,23 +190,28 @@ fun GridCell(cell: CellModel, indexInRow: Int) {
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-fun MessageBox(modifier: Modifier, message: Message?) {
+fun MessageBox(modifier: Modifier, message: Message?, previousMessage: Message?) {
     Box(
         modifier = modifier,
         contentAlignment = Center
     ) {
-        val messageString = when (message) {
-            Message.INPUT_ROW_FULL -> null
-            Message.INPUT_ROW_EMPTY -> null
-            Message.INPUT_ROW_INCOMPLETE -> "Equation incomplete"
-            Message.INVALID_EQUATION -> "Equation invalid"
-            Message.WON -> "You won! \uD83C\uDFC6 \uD83C\uDF89"
-            Message.LOST -> "Game over \uD83D\uDE14"
-            null -> null
+        val evaluateMessage: (Message?) -> String? = {
+            when (it) {
+                Message.INPUT_ROW_FULL -> null
+                Message.INPUT_ROW_EMPTY -> null
+                Message.INPUT_ROW_INCOMPLETE -> "Equation incomplete"
+                Message.INVALID_EQUATION -> "Equation invalid"
+                Message.WON -> "You won! \uD83C\uDFC6 \uD83C\uDF89"
+                Message.LOST -> "Game over \uD83D\uDE14"
+                null -> null
+            }
         }
 
+        val evaluatedMessage = evaluateMessage(message)
+        val evaluatedPreviousMessage = evaluateMessage(previousMessage)
+
         AnimatedVisibility(
-            visible = messageString != null,
+            visible = evaluatedMessage != null,
             enter = scaleIn(
                 initialScale = 0.4f,
                 animationSpec = tween(300, easing = FastOutSlowInEasing)
@@ -215,7 +222,7 @@ fun MessageBox(modifier: Modifier, message: Message?) {
             ) // TODO: doesn't work
         ) {
             Text(
-                messageString ?: "",
+                evaluatedMessage ?: evaluatedPreviousMessage ?: "",
                 style = MaterialTheme.typography.body1
             )
         }
