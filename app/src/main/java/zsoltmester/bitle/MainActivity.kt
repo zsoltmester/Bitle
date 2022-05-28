@@ -203,8 +203,8 @@ fun MessageBox(modifier: Modifier, message: Message?, previousMessage: Message?)
             when (it) {
                 Message.INPUT_ROW_FULL -> null
                 Message.INPUT_ROW_EMPTY -> null
-                Message.INPUT_ROW_INCOMPLETE -> "Equation incomplete"
-                Message.INVALID_EQUATION -> "Equation invalid"
+                Message.INPUT_ROW_INCOMPLETE -> "Incomplete equation"
+                Message.INVALID_EQUATION -> "Invalid equation"
                 Message.WON -> "You won! \uD83C\uDFC6 \uD83C\uDF89"
                 Message.LOST -> "Game over \uD83D\uDE14"
                 null -> null
@@ -294,7 +294,7 @@ fun KeyboardCell(cell: CellModel, onClick: (CellValue) -> Unit) {
             onClick = { onClick(cell.value) }
         ) {
             Text(
-                text = cellDisplayValue(cell.value, previousCellValue = cell.value),
+                text = cellDisplayValue(cell.value, withFullName = true),
                 color = textColor,
                 style = if (cell.type == CellType.UTILITY_DISABLED || cell.type == CellType.UTILITY_ENABLED) UtilityCellTextStyle else CellTextStyle,
                 textAlign = TextAlign.Center,
@@ -304,7 +304,11 @@ fun KeyboardCell(cell: CellModel, onClick: (CellValue) -> Unit) {
     }
 }
 
-private fun cellDisplayValue(cellValue: CellValue, previousCellValue: CellValue): String {
+private fun cellDisplayValue(
+    cellValue: CellValue,
+    previousCellValue: CellValue? = null,
+    withFullName: Boolean = false
+): String {
     val evaluateCellDisplayValue: (CellValue) -> String = {
         when (it) {
             CellValue.EMPTY ->
@@ -330,11 +334,11 @@ private fun cellDisplayValue(cellValue: CellValue, previousCellValue: CellValue)
             CellValue.ZERO ->
                 "0"
             CellValue.AND ->
-                "&"
+                if (withFullName) "AND" else "&"
             CellValue.OR ->
-                "|"
+                if (withFullName) "OR" else "|"
             CellValue.XOR ->
-                "^"
+                if (withFullName) "XOR" else "^"
             CellValue.EQUAL ->
                 "="
             CellValue.DELETE ->
@@ -345,9 +349,13 @@ private fun cellDisplayValue(cellValue: CellValue, previousCellValue: CellValue)
     }
 
     val cellDisplayValue = evaluateCellDisplayValue(cellValue)
-    val previousCellDisplayValue = evaluateCellDisplayValue(previousCellValue)
 
-    return cellDisplayValue.ifEmpty { previousCellDisplayValue }
+    return previousCellValue?.let {
+        val previousCellDisplayValue = evaluateCellDisplayValue(it)
+        cellDisplayValue.ifEmpty { previousCellDisplayValue }
+    } ?: run {
+        cellDisplayValue
+    }
 }
 
 private fun cellBackgroundColor(cellType: CellType): Color {
