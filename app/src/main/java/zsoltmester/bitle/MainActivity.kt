@@ -16,9 +16,9 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment.Companion.Center
+import androidx.compose.ui.Alignment.Companion.CenterStart
 import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -85,18 +85,16 @@ fun TopAppBar() {
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = CenterVertically
             ) {
-                IconButton(onClick = {}) {
-                    Icon(Icons.Filled.Info, null)
+                Box(modifier = Modifier.weight(0.5f), contentAlignment = CenterStart) {
+                    IconButton(onClick = {}) {
+                        Icon(Icons.Filled.Info, null)
+                    }
                 }
-                Spacer(modifier = Modifier.weight(0.5f))
                 Text(
                     "Bitle",
                     style = MaterialTheme.typography.h6
                 )
                 Spacer(modifier = Modifier.weight(0.5f))
-                IconButton(onClick = {}) {
-                    Icon(Icons.Filled.Person, null)
-                }
             }
         }
     )
