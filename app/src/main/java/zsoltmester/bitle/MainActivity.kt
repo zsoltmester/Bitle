@@ -1,13 +1,11 @@
 package zsoltmester.bitle
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.*
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -20,11 +18,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.Center
 import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
@@ -56,18 +52,20 @@ fun MainScreen(engine: GameEngine) {
         }
     ) {
         var gameState: GameState by remember { mutableStateOf(engine.startNewGame()) }
+        var previousGameState: GameState by remember { mutableStateOf(gameState) }
 
         Column(modifier = Modifier.fillMaxSize()) {
             Spacer(modifier = Modifier.weight(0.5f))
-            Grid(gameState.gridCells)
+            Grid(gameState.gridCells, previousCells = previousGameState.gridCells)
             MessageBox(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth(),
                 message = gameState.message,
-                previousMessage = gameState.previousMessage
+                previousMessage = previousGameState.message
             )
             Keyboard(gameState.keyboardCells, onClick = {
+                previousGameState = gameState
                 gameState = engine.processAction(it)
             })
         }
@@ -102,20 +100,20 @@ fun TopAppBar() {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun Grid(cells: List<CellModel>) {
+fun Grid(cells: List<CellModel>, previousCells: List<CellModel>) {
     // TODO: 8 should come from the engine
     LazyVerticalGrid(
         cells = GridCells.Fixed(8)
     ) {
         itemsIndexed(cells) { index, cell ->
-            GridCell(cell = cell, indexInRow = index % 8)
+            GridCell(cell = cell, previousCell = previousCells[index], indexInRow = index % 8)
         }
     }
 }
 
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterialApi::class, ExperimentalAnimationApi::class)
 @Composable
-fun GridCell(cell: CellModel, indexInRow: Int) {
+fun GridCell(cell: CellModel, previousCell: CellModel, indexInRow: Int) {
     FlipCard(
         cardFace = if (cell.type == CellType.EMPTY || cell.type == CellType.INPUT) CardFace.Front else CardFace.Back,
         animationSpec = tween(
@@ -136,29 +134,35 @@ fun GridCell(cell: CellModel, indexInRow: Int) {
                 animationSpec = tween(300, easing = FastOutSlowInEasing)
             )
 
-            val textScale: Float by animateFloatAsState(
-                targetValue = if (cell.type == CellType.EMPTY) 0.4f else 1f,
-                animationSpec = tween(300, easing = FastOutSlowInEasing)
-            )
-
             Box(
                 modifier = Modifier
                     .fillMaxSize(),
-                contentAlignment = Alignment.Center,
+                contentAlignment = Center
             ) {
                 Card(
                     modifier = Modifier
                         .fillMaxSize(),
                     border = BorderStroke(1.dp, cardBorderColor)
                 ) {
-                    Text(
-                        text = cellDisplayValue(cell.value),
-                        style = CellTextStyle,
-                        textAlign = TextAlign.Center,
+                    AnimatedVisibility(
                         modifier = Modifier
-                            .wrapContentHeight(CenterVertically)
-                            .scale(textScale)
-                    )
+                            .wrapContentHeight(CenterVertically),
+                        visible = cell.type != CellType.EMPTY,
+                        enter = scaleIn(
+                            initialScale = 0.4f,
+                            animationSpec = tween(300, easing = FastOutSlowInEasing)
+                        ),
+                        exit = scaleOut(
+                            targetScale = 0.4f,
+                            animationSpec = tween(300, easing = FastOutSlowInEasing)
+                        )
+                    ) {
+                        Text(
+                            text = cellDisplayValue(cell.value, previousCell.value),
+                            style = CellTextStyle,
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
             }
         },
@@ -166,7 +170,7 @@ fun GridCell(cell: CellModel, indexInRow: Int) {
             Box(
                 modifier = Modifier
                     .fillMaxSize(),
-                contentAlignment = Alignment.Center,
+                contentAlignment = Center,
             ) {
                 Card(
                     modifier = Modifier
@@ -174,7 +178,7 @@ fun GridCell(cell: CellModel, indexInRow: Int) {
                     backgroundColor = cellBackgroundColor(cell.type)
                 ) {
                     Text(
-                        text = cellDisplayValue(cell.value),
+                        text = cellDisplayValue(cell.value, previousCell.value),
                         color = Color.White,
                         style = CellTextStyle,
                         textAlign = TextAlign.Center,
@@ -219,7 +223,7 @@ fun MessageBox(modifier: Modifier, message: Message?, previousMessage: Message?)
             exit = scaleOut(
                 targetScale = 0.4f,
                 animationSpec = tween(300, easing = FastOutSlowInEasing)
-            ) // TODO: doesn't work
+            )
         ) {
             Text(
                 evaluatedMessage ?: evaluatedPreviousMessage ?: "",
@@ -290,7 +294,7 @@ fun KeyboardCell(cell: CellModel, onClick: (CellValue) -> Unit) {
             onClick = { onClick(cell.value) }
         ) {
             Text(
-                text = cellDisplayValue(cell.value),
+                text = cellDisplayValue(cell.value, previousCellValue = cell.value),
                 color = textColor,
                 style = if (cell.type == CellType.UTILITY_DISABLED || cell.type == CellType.UTILITY_ENABLED) UtilityCellTextStyle else CellTextStyle,
                 textAlign = TextAlign.Center,
@@ -300,43 +304,50 @@ fun KeyboardCell(cell: CellModel, onClick: (CellValue) -> Unit) {
     }
 }
 
-private fun cellDisplayValue(cellValue: CellValue): String {
-    return when (cellValue) {
-        CellValue.EMPTY ->
-            ""
-        CellValue.ONE ->
-            "1"
-        CellValue.TWO ->
-            "2"
-        CellValue.THREE ->
-            "3"
-        CellValue.FOUR ->
-            "4"
-        CellValue.FIVE ->
-            "5"
-        CellValue.SIX ->
-            "6"
-        CellValue.SEVEN ->
-            "7"
-        CellValue.EIGHT ->
-            "8"
-        CellValue.NINE ->
-            "9"
-        CellValue.ZERO ->
-            "0"
-        CellValue.AND ->
-            "&"
-        CellValue.OR ->
-            "|"
-        CellValue.XOR ->
-            "^"
-        CellValue.EQUAL ->
-            "="
-        CellValue.DELETE ->
-            "DELETE"
-        CellValue.ENTER ->
-            "ENTER"
+private fun cellDisplayValue(cellValue: CellValue, previousCellValue: CellValue): String {
+    val evaluateCellDisplayValue: (CellValue) -> String = {
+        when (it) {
+            CellValue.EMPTY ->
+                ""
+            CellValue.ONE ->
+                "1"
+            CellValue.TWO ->
+                "2"
+            CellValue.THREE ->
+                "3"
+            CellValue.FOUR ->
+                "4"
+            CellValue.FIVE ->
+                "5"
+            CellValue.SIX ->
+                "6"
+            CellValue.SEVEN ->
+                "7"
+            CellValue.EIGHT ->
+                "8"
+            CellValue.NINE ->
+                "9"
+            CellValue.ZERO ->
+                "0"
+            CellValue.AND ->
+                "&"
+            CellValue.OR ->
+                "|"
+            CellValue.XOR ->
+                "^"
+            CellValue.EQUAL ->
+                "="
+            CellValue.DELETE ->
+                "DELETE"
+            CellValue.ENTER ->
+                "ENTER"
+        }
     }
+
+    val cellDisplayValue = evaluateCellDisplayValue(cellValue)
+    val previousCellDisplayValue = evaluateCellDisplayValue(previousCellValue)
+
+    return cellDisplayValue.ifEmpty { previousCellDisplayValue }
 }
 
 private fun cellBackgroundColor(cellType: CellType): Color {

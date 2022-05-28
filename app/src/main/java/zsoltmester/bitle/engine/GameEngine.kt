@@ -48,8 +48,7 @@ data class GameState(
     val status: GameStatus,
     val gridCells: List<CellModel>,
     val keyboardCells: List<CellModel>,
-    val message: Message?,
-    val previousMessage: Message?
+    val message: Message?
 )
 
 interface GameEngine {
@@ -108,7 +107,7 @@ class GameEngineImpl(private val context: Context) : GameEngine {
             }
         }
 
-        gameState = gameState!!.copy(message = message, previousMessage = previousMessage)
+        gameState = gameState!!.copy(message = message)
 
         return gameState!!
     }
@@ -177,8 +176,7 @@ class GameEngineImpl(private val context: Context) : GameEngine {
             GameStatus.IN_PROGRESS,
             gridCells,
             keyboardCells,
-            null,
-            previousMessage = null
+            null
         )
     }
 
