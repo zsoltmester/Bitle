@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment.Companion.Center
+import androidx.compose.ui.Alignment.Companion.CenterEnd
 import androidx.compose.ui.Alignment.Companion.CenterStart
 import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
@@ -46,13 +47,41 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MainScreen(engine: GameEngine) {
+    var presentInfoDialog: Boolean by remember { mutableStateOf(false) }
+
     Scaffold(
         topBar = {
-            TopAppBar()
+            TopAppBar(onClick = {
+                presentInfoDialog = true
+            })
         }
     ) {
         var gameState: GameState by remember { mutableStateOf(engine.startNewGame()) }
         var previousGameState: GameState by remember { mutableStateOf(gameState) }
+
+        if (presentInfoDialog) {
+            AlertDialog(
+                onDismissRequest = { presentInfoDialog = false },
+                text = {
+                    Text("Guess the equation.\n\nThe equation consists of 3 parts:\n1. Combination of numbers and operators.\n2. An equation sign.\n3. A number.\n\nThe numbers are unsigned 8 bit integers ranging from 0 to 255. The operators are bitwise operators and evaluated from left to right.\n\nIf you enter a valid equation and press enter, every position will turn into:\n* Green, if that position has the correct value.\n* Yellow, if the equation contains that value, but not on that position.\n* Gray, if the equation doesn't contain that value.\n\nYou win, if you find the equation.")
+                },
+                buttons = {
+                    Box(
+                        contentAlignment = CenterEnd,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(end = 16.dp, bottom = 16.dp)
+                    ) {
+                        Button(
+                            onClick = {
+                                presentInfoDialog = false
+                            }) {
+                            Text("OK")
+                        }
+                    }
+                }
+            )
+        }
 
         Column(modifier = Modifier.fillMaxSize()) {
             Spacer(modifier = Modifier.weight(0.5f))
@@ -77,7 +106,7 @@ fun MainScreen(engine: GameEngine) {
 }
 
 @Composable
-fun TopAppBar() {
+fun TopAppBar(onClick: () -> Unit) {
     TopAppBar(
         content = {
             Row(
@@ -86,7 +115,7 @@ fun TopAppBar() {
                 verticalAlignment = CenterVertically
             ) {
                 Box(modifier = Modifier.weight(0.5f), contentAlignment = CenterStart) {
-                    IconButton(onClick = {}) {
+                    IconButton(onClick = { onClick() }) {
                         Icon(Icons.Filled.Info, null)
                     }
                 }
