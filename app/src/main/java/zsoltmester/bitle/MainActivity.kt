@@ -1,5 +1,6 @@
 package zsoltmester.bitle
 
+import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -121,7 +122,7 @@ fun TopAppBar(onClick: () -> Unit) {
                 }
                 Text(
                     "Bitle",
-                    style = MaterialTheme.typography.h6
+                    style = MaterialTheme.typography.h5
                 )
                 Spacer(modifier = Modifier.weight(0.5f))
             }
@@ -156,6 +157,7 @@ fun GridCell(cell: CellModel, previousCell: CellModel, indexInRow: Int) {
             .padding(4.dp)
             .height(48.dp)
             .fillMaxWidth(),
+        axis = RotationAxis.AxisY,
         front = {
             val cardBorderColor: Color by animateColorAsState(
                 targetValue = when (cell.type) {
@@ -190,7 +192,7 @@ fun GridCell(cell: CellModel, previousCell: CellModel, indexInRow: Int) {
                     ) {
                         Text(
                             text = cellDisplayValue(cell.value, previousCell.value),
-                            style = CellTextStyle,
+                            style = DefaultCellTextStyle,
                             textAlign = TextAlign.Center
                         )
                     }
@@ -210,8 +212,8 @@ fun GridCell(cell: CellModel, previousCell: CellModel, indexInRow: Int) {
                 ) {
                     Text(
                         text = cellDisplayValue(cell.value, previousCell.value),
-                        color = Color.White,
-                        style = CellTextStyle,
+                        color = DefaultCellTextColor,
+                        style = DefaultCellTextStyle,
                         textAlign = TextAlign.Center,
                         modifier = Modifier
                             .wrapContentHeight(CenterVertically)
@@ -324,7 +326,11 @@ fun KeyboardCell(cell: CellModel, onClick: (CellValue) -> Unit) {
     )
 
     val textColor: Color by animateColorAsState(
-        targetValue = if (cell.type == CellType.UNKNOWN || cell.type == CellType.UTILITY_DISABLED || cell.type == CellType.UTILITY_ENABLED) Color.Black else Color.White,
+        targetValue = when (cell.type) {
+            CellType.UNKNOWN -> UnknownKeyboardCellTextColor
+            CellType.UTILITY_DISABLED, CellType.UTILITY_ENABLED -> MaterialTheme.colors.onPrimary
+            else -> DefaultCellTextColor
+        },
         animationSpec = tween(300, easing = FastOutSlowInEasing)
     )
 
@@ -344,7 +350,7 @@ fun KeyboardCell(cell: CellModel, onClick: (CellValue) -> Unit) {
             Text(
                 text = cellDisplayValue(cell.value, withFullName = true),
                 color = textColor,
-                style = if (cell.type == CellType.UTILITY_DISABLED || cell.type == CellType.UTILITY_ENABLED) UtilityCellTextStyle else CellTextStyle,
+                style = if (cell.type == CellType.UTILITY_DISABLED || cell.type == CellType.UTILITY_ENABLED) UtilityCellTextStyle else DefaultCellTextStyle,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.wrapContentHeight(CenterVertically)
             )
@@ -406,6 +412,7 @@ private fun cellDisplayValue(
     }
 }
 
+@Composable
 private fun cellBackgroundColor(cellType: CellType): Color {
     return when (cellType) {
         CellType.EMPTY ->
@@ -421,21 +428,31 @@ private fun cellBackgroundColor(cellType: CellType): Color {
         CellType.UNKNOWN ->
             UnknownCellColor
         CellType.UTILITY_DISABLED, CellType.UTILITY_ENABLED ->
-            UtilityCellColor
+            MaterialTheme.colors.primary
     }
 }
 
-//@Preview(
-//    uiMode = Configuration.UI_MODE_NIGHT_YES,
-//    showBackground = true,
-//    name = "Dark Mode"
-//)
 @Preview(
-//    name = "Light Mode",
+    name = "Light Mode",
+    uiMode = Configuration.UI_MODE_NIGHT_NO,
     showSystemUi = true
 )
 @Composable
-fun DefaultPreview() {
+fun LightPreview() {
+    BitleTheme {
+        MainScreen(GameEngineImpl(LocalContext.current))
+    }
+}
+
+@Preview(
+    name = "Dark Mode",
+    widthDp = 300,
+    heightDp = 500,
+    uiMode = Configuration.UI_MODE_NIGHT_YES,
+    showSystemUi = true
+)
+@Composable
+fun DarkPreview() {
     BitleTheme {
         MainScreen(GameEngineImpl(LocalContext.current))
     }

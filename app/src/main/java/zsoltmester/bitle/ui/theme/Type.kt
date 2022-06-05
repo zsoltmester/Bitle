@@ -9,7 +9,7 @@ import androidx.compose.ui.unit.sp
 val Typography = Typography(
 )
 
-val CellTextStyle = TextStyle(
+val DefaultCellTextStyle = TextStyle(
     fontFamily = FontFamily.Default,
     fontWeight = FontWeight.SemiBold,
     fontSize = 22.sp
@@ -18,5 +18,5 @@ val CellTextStyle = TextStyle(
 val UtilityCellTextStyle = TextStyle(
     fontFamily = FontFamily.Default,
     fontWeight = FontWeight.SemiBold,
-    fontSize = 16.sp
+    fontSize = 22.sp
 )
