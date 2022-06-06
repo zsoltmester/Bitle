@@ -86,12 +86,15 @@ fun MainScreen(engine: GameEngine) {
 
         Column(modifier = Modifier.fillMaxSize()) {
             Column(modifier = Modifier.weight(1f, fill = false)) {
-                Spacer(modifier = Modifier.weight(0.5f))
-                Grid(gameState.gridCells, previousCells = previousGameState.gridCells)
+                Grid(
+                    modifier = Modifier.weight(1f, fill = false),
+                    gameState.gridCells,
+                    previousCells = previousGameState.gridCells
+                )
                 MessageBox(
                     modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
+                        .fillMaxWidth()
+                        .height(48.dp),
                     message = gameState.message,
                     previousMessage = previousGameState.message,
                     gameStatus = gameState.status, onClick = {
@@ -134,14 +137,18 @@ fun TopAppBar(onClick: () -> Unit) {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun Grid(cells: List<CellModel>, previousCells: List<CellModel>) {
-    // TODO: 8 should come from the engine
-    LazyVerticalGrid(
-        cells = GridCells.Fixed(8)
-    ) {
-        itemsIndexed(cells) { index, cell ->
-            GridCell(cell = cell, previousCell = previousCells[index], indexInRow = index % 8)
+fun Grid(modifier: Modifier, cells: List<CellModel>, previousCells: List<CellModel>) {
+    Column(modifier = modifier) {
+        Spacer(modifier = Modifier.weight(1f))
+        // TODO: 8 should come from the engine
+        LazyVerticalGrid(
+            cells = GridCells.Fixed(8)
+        ) {
+            itemsIndexed(cells) { index, cell ->
+                GridCell(cell = cell, previousCell = previousCells[index], indexInRow = index % 8)
+            }
         }
+        Spacer(modifier = Modifier.weight(1f))
     }
 }
 
@@ -271,7 +278,7 @@ fun MessageBox(
                     evaluatedMessage ?: evaluatedPreviousMessage ?: "",
                     style = MaterialTheme.typography.body1
                 )
-                if (gameStatus == GameStatus.IN_PROGRESS) {
+                if (gameStatus != GameStatus.IN_PROGRESS) {
                     Spacer(modifier = Modifier.width(16.dp))
                     Button(onClick = { onClick() }) {
                         Text(
