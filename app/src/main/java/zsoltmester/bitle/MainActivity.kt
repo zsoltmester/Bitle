@@ -85,19 +85,21 @@ fun MainScreen(engine: GameEngine) {
         }
 
         Column(modifier = Modifier.fillMaxSize()) {
-            Spacer(modifier = Modifier.weight(0.5f))
-            Grid(gameState.gridCells, previousCells = previousGameState.gridCells)
-            MessageBox(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
-                message = gameState.message,
-                previousMessage = previousGameState.message,
-                gameStatus = gameState.status, onClick = {
-                    previousGameState = gameState
-                    gameState = engine.startNewGame()
-                }
-            )
+            Column(modifier = Modifier.weight(1f, fill = false)) {
+                Spacer(modifier = Modifier.weight(0.5f))
+                Grid(gameState.gridCells, previousCells = previousGameState.gridCells)
+                MessageBox(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
+                    message = gameState.message,
+                    previousMessage = previousGameState.message,
+                    gameStatus = gameState.status, onClick = {
+                        previousGameState = gameState
+                        gameState = engine.startNewGame()
+                    }
+                )
+            }
             Keyboard(gameState.keyboardCells, onClick = {
                 previousGameState = gameState
                 gameState = engine.processAction(it)
