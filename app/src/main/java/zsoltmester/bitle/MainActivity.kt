@@ -1,5 +1,6 @@
 package zsoltmester.bitle
 
+import android.annotation.SuppressLint
 import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -11,9 +12,9 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.GridCells
-import androidx.compose.foundation.lazy.LazyVerticalGrid
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
@@ -46,6 +47,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @Composable
 fun MainScreen(engine: GameEngine) {
     var presentInfoDialog: Boolean by remember { mutableStateOf(false) }
@@ -142,7 +144,7 @@ fun Grid(modifier: Modifier, cells: List<CellModel>, previousCells: List<CellMod
         Spacer(modifier = Modifier.weight(1f))
         // TODO: 8 should come from the engine
         LazyVerticalGrid(
-            cells = GridCells.Fixed(8)
+            columns = GridCells.Fixed(8)
         ) {
             itemsIndexed(cells) { index, cell ->
                 GridCell(cell = cell, previousCell = previousCells[index], indexInRow = index % 8)
