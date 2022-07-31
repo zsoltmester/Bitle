@@ -325,7 +325,7 @@ class GameEngineImpl(private val context: Context) : GameEngine {
         gameState = gameState!!.copy(status = newGameStatus)
         return when (newGameStatus) {
             GameStatus.WON -> Message.WON
-            GameStatus.LOST -> Message.WON
+            GameStatus.LOST -> Message.LOST
             else -> null
         }
     }
